@@ -3,7 +3,7 @@ from ..db import db
 from ..models.task import Task
 from .route_utilities import validate_model
 import json
-
+from datetime import datetime, timezone
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -54,11 +54,9 @@ def get_all_tasks():
 
     tasks = db.session.scalars(query).all()
 
-    tasks_response = [task.create_response() for task in tasks]
+    response = [task.create_response() for task in tasks]
 
-    response_data = json.dumps(tasks_response)
-
-    return Response(response_data, content_type="application/json")
+    return response
 
 
 @tasks_bp.get("/<task_id>")
@@ -88,6 +86,38 @@ def update_task(task_id):
 
     response = {"task": task.create_response()}
 
+    return response
+
+
+@tasks_bp.patch("/<task_id>/mark_complete")
+def mark_task_complete(task_id):
+    task = db.session.get(Task, task_id)
+    if not task:
+        return {"error": "Task not found"}, 404
+
+    task.completed_at = datetime.now(timezone.utc)
+    task.is_complete = True
+
+    db.session.commit()
+
+    response = {"task": task.create_response()}
+    return response
+
+
+@tasks_bp.patch("/<task_id>/mark_incomplete")
+def mark_task_incomplete(task_id):
+    task = db.session.get(Task, task_id)
+    if not task:
+        return {"error": "Task not found"}, 404
+    # if not task.completed_at:
+    #     return {"error": "Task is already incomplete"}, 400
+
+    task.completed_at = None
+    task.is_complete = False
+
+    db.session.commit()
+
+    response = {"task": task.create_response()}
     return response
 
 

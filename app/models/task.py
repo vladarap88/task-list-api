@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..db import db
 from datetime import datetime
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, Boolean
 from typing import Optional
 
 
@@ -10,6 +10,7 @@ class Task(db.Model):
     title: Mapped[str]
     description: Mapped[str]
     completed_at: Mapped[Optional[datetime]]
+    is_complete: Mapped[bool] = mapped_column(Boolean, default=False)
 
     def to_dict(self):
         return dict(
@@ -17,6 +18,7 @@ class Task(db.Model):
             title=self.title,
             description=self.description,
             completed_at=self.completed_at,
+            is_complete=self.is_complete,
         )
 
     @classmethod
@@ -25,6 +27,7 @@ class Task(db.Model):
             title=task_data["title"],
             description=task_data["description"],
             completed_at=None,
+            is_complete=False,
         )
 
     def create_response(self):
@@ -32,5 +35,5 @@ class Task(db.Model):
             "id": self.id,
             "title": self.title,
             "description": self.description,
-            "is_complete": False,
+            "is_complete": self.is_complete,
         }
