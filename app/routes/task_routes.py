@@ -2,6 +2,7 @@ from flask import Blueprint, abort, make_response, request, Response
 from ..db import db
 from ..models.task import Task
 from .route_utilities import validate_model
+import json
 
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
@@ -32,23 +33,32 @@ def get_all_tasks():
     query = db.select(Task)
     title_param = request.args.get("title")
 
-    if title_param:
-        query = query.where(Task.title == title_param)
+    # if title_param:
+    #     query = query.where(Task.title == title_param)
 
-    description_param = request.args.get("description")
-    if description_param:
-        query = query.where(Task.description.ilike(f"%{description_param}%"))
+    # description_param = request.args.get("description")
+    # if description_param:
+    #     query = query.where(Task.description.ilike(f"%{description_param}%"))
 
-    completed_at_param = request.args.get("completed_at")
-    if completed_at_param:
-        query = query.where(Task.completed_at.ilike(f"%{completed_at_param}%"))
+    # completed_at_param = request.args.get("completed_at")
+    # if completed_at_param:
+    #     query = query.where(Task.completed_at.ilike(f"%{completed_at_param}%"))
 
-    query = query.order_by(Task.id)
+    sort_param = request.args.get("sort")
+    if sort_param == "asc":
+        query = query.order_by(Task.title.asc())
+    elif sort_param == "desc":
+        query = query.order_by(Task.title.desc())
+    else:
+        query = query.order_by(Task.id)
 
-    tasks = db.session.scalars(query)
+    tasks = db.session.scalars(query).all()
 
     tasks_response = [task.create_response() for task in tasks]
-    return tasks_response
+
+    response_data = json.dumps(tasks_response)
+
+    return Response(response_data, content_type="application/json")
 
 
 @tasks_bp.get("/<task_id>")
