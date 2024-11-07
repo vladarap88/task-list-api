@@ -22,10 +22,10 @@ class Task(db.Model):
         )
 
     @classmethod
-    def from_dict(cls, task_data):
+    def from_dict(cls, data):
         return cls(
-            title=task_data["title"],
-            description=task_data["description"],
+            title=data["title"],
+            description=data["description"],
             completed_at=None,
             is_complete=False,
         )
