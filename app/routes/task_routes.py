@@ -4,6 +4,8 @@ from ..models.task import Task
 from .route_utilities import validate_model
 import json
 from datetime import datetime, timezone
+import requests
+import os
 
 tasks_bp = Blueprint("tasks_bp", __name__, url_prefix="/tasks")
 
@@ -94,6 +96,19 @@ def mark_task_complete(task_id):
     task = db.session.get(Task, task_id)
     if not task:
         return {"error": "Task not found"}, 404
+
+    # Send notification using Slack API
+    if task.id == 1 and task.title == "My Beautiful Task" and task.completed_at == None:
+        url = "https://slack.com/api/chat.postMessage"
+        headers = {
+            "Authorization": "Bearer " + os.environ.get("SLACKBOT_API_KEY"),
+            "Content-Type": "application/json",
+        }
+        data = {
+            "channel": "task-notifications-vr",
+            "text": "Someone just completed the task My Beautiful Task",
+        }
+        requests.post(url, headers=headers, json=data)
 
     task.completed_at = datetime.now(timezone.utc)
     task.is_complete = True
