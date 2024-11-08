@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, make_response, request, Response
 from ..db import db
 from ..models.goal import Goal
+from ..models.task import Task
 from .route_utilities import validate_model
 from datetime import datetime, timezone
 
@@ -27,6 +28,24 @@ def create_goal():
     return response, 201
 
 
+@goals_bp.post("/<goal_id>/tasks")
+def create_tasks_with_goal(goal_id):
+    goal = validate_model(Goal, goal_id)
+
+    request_body = request.get_json()
+
+    task_ids = request_body["task_ids"]
+    for task_id in task_ids:
+        task = validate_model(Task, task_id)
+        task.goal_id = goal.id
+
+        db.session.commit()
+
+    response = {"id": goal.id}
+    response.update(request_body)
+    return make_response(response)
+
+
 @goals_bp.get("")
 def get_all_goals():
     query = db.select(Goal)
@@ -49,6 +68,22 @@ def get_one_goal(goal_id):
     response = {"goal": goal.create_response()}
 
     return response
+
+
+@goals_bp.get("/<goal_id>/tasks")
+def get_tasks_by_goal(goal_id):
+    try:
+        goal = validate_model(Goal, goal_id)
+    except:
+        return make_response({"details": f"Goal {goal_id} not found"}, 404)
+
+    response_body = {
+        "id": goal.id,
+        "title": goal.title,
+        "tasks": [task.create_response() for task in goal.tasks],
+    }
+
+    return make_response(response_body)
 
 
 @goals_bp.put("/<goal_id>")
